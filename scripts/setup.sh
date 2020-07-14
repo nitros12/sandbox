@@ -37,8 +37,30 @@ sudo apt-get update \
     python3-setuptools \
     python3-pip \
     wget \
+    pocl-opencl-icd \
+    ocl-icd-opencl-dev \
+    ocl-icd-libopencl1 \
+    opencl-headers \
+    clinfo \
   && sudo pip3 install --system \
     meson \
     ninja \
     wheel \
   && sudo rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+mkdir /tmp/neo
+pushd /tmp/neo
+
+wget https://github.com/intel/compute-runtime/releases/download/20.27.17231/intel-gmmlib_20.2.2_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/20.27.17231/intel-igc-core_1.0.4241_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/20.27.17231/intel-igc-opencl_1.0.4241_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/20.27.17231/intel-opencl_20.27.17231_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/20.27.17231/intel-ocloc_20.27.17231_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/20.27.17231/intel-level-zero-gpu_0.8.17231_amd64.deb
+
+wget https://github.com/intel/compute-runtime/releases/download/20.27.17231/ww27.sum
+sha256sum -c ww27.sum
+
+sudo dpkg -i *.deb
+
+popd

@@ -52,53 +52,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.network "private_network", ip: "10.100.1.10"
   config.vm.network "private_network", ip: "10.100.1.11"
 
-  # Pull and run our image(s) in order to do the devbind and insmod for kni.
-  config.vm.define "docker", primary: true do |docker|
-    # VirtualBox-specific default configuration
-    docker.vm.provider "virtualbox" do |vb, override|
-      # Set machine name, memory and CPU limits
-      vb.name = "debian:buster-capsule-docker"
-      vb.memory = 8192
-      vb.cpus = 4
-      vb.default_nic_type = "virtio"
-
-      # Configure VirtualBox to enable passthrough of SSE 4.1 and SSE 4.2 instructions,
-      vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.1", "1"]
-      vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.2", "1"]
-
-      # Allow promiscuous mode for host-only adapter
-      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
-
-      # Sync folder via VirtualBox type.
-      override.vm.synced_folder ".", "/vagrant", create: true, type: "virtualbox"
-    end
-
-    docker.vm.provision "shell", path: "scripts/docker-vagrant.sh", :args => [$dpdk_driver, $vhome]
-    docker.vm.provision "docker" do |d|
-      d.pull_images "#{$devbind_img}"
-      d.pull_images "#{$dpdkmod_img}"
-      d.pull_images "#{$sandbox_img}"
-      d.run "#{$devbind_img}",
-            auto_assign_name: false,
-            args: %W(--rm
-                     --privileged
-                     --network=host
-                     -v /lib/modules:/lib/modules).join(" "),
-            restart: "no",
-            daemonize: true,
-            cmd: "/bin/bash -c 'dpdk-devbind.py --force -b #{$dpdk_driver} #{$dpdk_devices}'"
-      d.run "#{$dpdkmod_img}",
-            auto_assign_name: false,
-            args: %W(--rm
-                     --privileged
-                     --network=host).join(" "),
-            restart: "no",
-            daemonize: true,
-            cmd: "insmod /lib/modules/`uname -r`/extra/dpdk/rte_kni.ko"
-    end
-  end
-
-  config.vm.define "vm", primary: false, autostart: false do |v|
+  config.vm.define "vm", primary: true do |v|
     # VirtualBox-specific default configuration
     v.vm.provider "virtualbox" do |vb, override|
       # Set machine name, memory and CPU limits
@@ -118,7 +72,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       override.vm.synced_folder ".", "/vagrant", create: true, type: "virtualbox"
     end
 
-    # Setup for ubuntu/debian.
     v.vm.provision "shell", path: "scripts/setup.sh"
     # Install DPDK.
     v.vm.provision "shell", path: "scripts/dpdk.sh"
