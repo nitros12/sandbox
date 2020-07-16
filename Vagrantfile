@@ -19,13 +19,6 @@
 
 VAGRANTFILE_API_VERSION = "2"
 
-# Required Vagrant plugins.
-['vagrant-reload', 'vagrant-disksize', 'vagrant-vbguest'].each do |plugin|
-  unless Vagrant.has_plugin?(plugin)
-    raise "Vagrant plugin #{plugin} is not installed!"
-  end
-end
-
 # Default Vagrant vars.
 $devbind_img = "getcapsule/dpdk-devbind:19.11.1"
 $dpdkmod_img = "getcapsule/dpdk-mod:19.11.1-`uname -r`"
@@ -39,37 +32,25 @@ $vhome = "/home/vagrant"
 # options are documented and commented below. For a complete reference,
 # please see the online documentation at https://docs.vagrantup.com.
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.allowed_synced_folder_types = [:virtualbox, :vmware, :sshfs]
   config.vm.box = "debian/buster64"
   config.vm.box_check_update = false
   config.vm.post_up_message = "hello Capsule!"
 
   config.disksize.size = "45GB"
-  config.ssh.forward_agent = true
-  config.ssh.forward_x11 = true
+
+  config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".git/"
 
   # Specific IPs. These is needed because DPDK takes over the NIC.
-  config.vm.network "private_network", ip: "10.100.1.10"
-  config.vm.network "private_network", ip: "10.100.1.11"
+  # config.vm.network "private_network", ip: "10.100.1.10"
+  # config.vm.network "private_network", ip: "10.100.1.11"
 
   config.vm.define "vm", primary: true do |v|
     # VirtualBox-specific default configuration
-    v.vm.provider "virtualbox" do |vb, override|
-      # Set machine name, memory and CPU limits
-      vb.name = "debian:buster-capsule-vm"
-      vb.memory = 8192
-      vb.cpus = 4
-      vb.default_nic_type = "virtio"
-
-      # Configure VirtualBox to enable passthrough of SSE 4.1 and SSE 4.2 instructions,
-      vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.1", "1"]
-      vb.customize ["setextradata", :id, "VBoxInternal/CPUM/SSE4.2", "1"]
-
-      # Allow promiscuous mode for host-only adapter
-      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
-
-      # Sync folder via VirtualBox type.
-      override.vm.synced_folder ".", "/vagrant", create: true, type: "virtualbox"
+    v.vm.provider "libvirt" do |v|
+#       v.management_network_name = "vagrant-libvirt-dpdk"
+#       v.management_network_address = "192.168.124.0/24"
+      v.memory = 8192
+      v.cpus = 8
     end
 
     v.vm.provision "shell", path: "scripts/setup.sh"

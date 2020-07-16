@@ -33,9 +33,9 @@ sysctl -e -p
 grep -qxF "source $HOME/.cargo/env" $HOME/.bashrc || \
     echo "source $HOME/.cargo/env" >> $HOME/.bashrc
 
-# Start at "/vagrant/capsule" upon ssh.
-grep -qxF "cd /vagrant/capsule" ${VAGRANT_HOME_DIR}/.bashrc || \
-    echo "cd /vagrant/capsule" >> ${VAGRANT_HOME_DIR}/.bashrc
+# Start at "/vagrant" upon ssh.
+grep -qxF "cd /vagrant" ${VAGRANT_HOME_DIR}/.bashrc || \
+    echo "cd /vagrant" >> ${VAGRANT_HOME_DIR}/.bashrc
 
 # Turn CARGO_INCREMENTAL off for vagrant/sudo users.
 grep -qxF "export CARGO_INCREMENTAL=0" $HOME/.bashrc || \
